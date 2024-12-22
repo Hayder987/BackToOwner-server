@@ -38,6 +38,11 @@ async function run() {
         res.send(result)
     })
 
+    app.get('/recentPost', async(req, res)=>{
+        const result = await postCollection.find().sort({ postedDate: -1 }).limit(6).toArray()
+        res.send(result)
+    })
+
    
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
