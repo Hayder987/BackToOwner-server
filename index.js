@@ -25,8 +25,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-    app.post('addItems', async(req, res)=>{
-        
+    const postCollection = client.db("lostDB").collection('postCollection');
+
+    app.post('/addItems', async(req, res)=>{
+        const body = req.body
+        const result = await postCollection.insertOne(body)
+        res.send(result) 
     })
 
    
