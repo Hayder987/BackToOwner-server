@@ -26,6 +26,7 @@ async function run() {
   try {
 
     const postCollection = client.db("lostDB").collection('postCollection');
+    const dataCollection = client.db("lostDB").collection('dataCollection');
 
     app.post('/addItems', async(req, res)=>{
         const body = req.body
@@ -48,6 +49,22 @@ async function run() {
         const query = {_id: new ObjectId(id)}
         const result = await postCollection.findOne(query)
         res.send(result)
+    })
+
+    app.post('/addData', async(req, res)=>{
+      const body = req.body;
+      const result = await dataCollection.insertOne(body)
+      
+      // change Status 
+      const query = {_id: new ObjectId(body.postId)}
+      const updateDoc = {
+        $set: {
+          status: 'recovered'
+        },
+      };
+
+      const result2 = await postCollection.updateOne(query, updateDoc)
+      res.send(result2)
     })
 
    
