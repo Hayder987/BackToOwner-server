@@ -5,7 +5,7 @@ const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 4000
 
-
+// middleware
 app.use(cors())
 app.use(express.json())
 
@@ -28,22 +28,34 @@ async function run() {
     const postCollection = client.db("lostDB").collection('postCollection');
     const dataCollection = client.db("lostDB").collection('dataCollection');
 
+    // post post data
     app.post('/addItems', async(req, res)=>{
         const body = req.body
         const result = await postCollection.insertOne(body)
         res.send(result) 
     })
 
+    // get all Post
     app.get('/getItems', async(req, res)=>{
         const result = await postCollection.find().toArray()
         res.send(result)
     })
 
+    //get recent added post
     app.get('/recentPost', async(req, res)=>{
         const result = await postCollection.find().sort({ postedDate: -1 }).limit(6).toArray()
         res.send(result)
     })
 
+    // get user Data
+    app.get('/userData/:email', async(req, res)=>{
+      const email = req.params.email
+      const query = {email:email}
+      const result  = await postCollection.find(query).toArray()
+      res.send(result)
+    })
+    
+  //  find post Data by id
     app.get('/item/:id', async(req, res)=>{
         const id = req.params.id
         const query = {_id: new ObjectId(id)}
@@ -51,6 +63,7 @@ async function run() {
         res.send(result)
     })
 
+    // add find Lost Data and Update status
     app.post('/addData', async(req, res)=>{
       const body = req.body;
       const result = await dataCollection.insertOne(body)
