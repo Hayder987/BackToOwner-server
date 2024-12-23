@@ -83,6 +83,13 @@ async function run() {
       const result = await postCollection.updateOne(query, updateDoc)
       res.send(result)
     })
+
+    //allRecovered post api
+    app.get('/allRecovered', async(req, res)=>{
+      const query = {status:'recovered'}
+      const result = await postCollection.find(query).toArray()
+      res.send(result)
+    })
     
     //delete post by id
     app.delete('/postId/:id', async(req, res)=>{
