@@ -48,8 +48,8 @@ async function run() {
     });
 
     // get user Data by email
-    app.get("/userData/:email", async (req, res) => {
-      const email = req.params.email;
+    app.get("/userData", async (req, res) => {
+      const email = req.query.email;
       const query = { email: email };
       const result = await postCollection.find(query).toArray();
       res.send(result);
@@ -86,8 +86,9 @@ async function run() {
 
     //allRecovered post api
     app.get('/allRecovered', async(req, res)=>{
-      const query = {status:'recovered'}
-      const result = await postCollection.find(query).toArray()
+      const email = req.query.email
+      const query = {recoveredEmail:email}
+      const result = await dataCollection.find(query).toArray()
       res.send(result)
     })
     
