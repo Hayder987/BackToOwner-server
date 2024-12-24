@@ -31,10 +31,23 @@ async function run() {
       res.send(result);
     });
 
-    // get all Post
+   // search api 
     app.get("/getItems", async (req, res) => {
-      const result = await postCollection.find().toArray();
+      const search = req.query.search 
+  
+      let option = {}
+      if(search){
+        option = {
+          $or: [
+            { location: { $regex: search, $options: 'i' } },
+            { title: { $regex: search, $options: 'i' } },
+          ]
+        };
+      }
+       
+      const result = await postCollection.find(option).toArray();
       res.send(result);
+      
     });
 
     //get recent added post
