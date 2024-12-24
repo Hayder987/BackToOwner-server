@@ -2,12 +2,18 @@ require("dotenv").config();
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 4000;
 
 // middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials:true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.7ya1e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -24,6 +30,19 @@ async function run() {
     const postCollection = client.db("lostDB").collection("postCollection");
     const dataCollection = client.db("lostDB").collection("dataCollection");
 
+    app.post('/jwt', (req, res)=>{
+       const user = req.body
+       const token =jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {expiresIn:'1d'})
+       
+       res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+       }).send({status:true})
+    })
+
+    
+
     // post post data
     app.post("/addItems", async (req, res) => {
       const body = req.body;
@@ -31,7 +50,7 @@ async function run() {
       res.send(result);
     });
 
-   // search api 
+   // search api and get post data api
     app.get("/getItems", async (req, res) => {
       const search = req.query.search 
   
