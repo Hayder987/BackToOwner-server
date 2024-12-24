@@ -12,8 +12,27 @@ app.use(cors({
   origin: ['http://localhost:5173'],
   credentials:true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
+
+const verifyToken=(req, res, next)=>{
+  const token = req.cookies.token
+  
+  if(!token){
+  return  res.status(401).send('UnAuthorized: Authentication credentials are missing')
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_KEY, (err, decoded)=>{
+    if(err){
+      return  res.status(401).send('UnAuthorized: Authentication credentials are inValid') 
+    }
+
+    req.user = decoded
+    next()
+  })
+
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.7ya1e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -30,21 +49,29 @@ async function run() {
     const postCollection = client.db("lostDB").collection("postCollection");
     const dataCollection = client.db("lostDB").collection("dataCollection");
 
+   //create jwt token
     app.post('/jwt', (req, res)=>{
        const user = req.body
        const token =jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {expiresIn:'1d'})
        
        res.cookie('token', token, {
-        httpOnly: true,
+    
         secure: process.env.NODE_ENV === 'production', 
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
        }).send({status:true})
     })
 
+    //remove jwt token
+    app.post('/logOut', (req, res)=>{
+      res.clearCookie('token', {
     
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', 
+      }).send({status:'token Cleared'})
+    })
 
     // post post data
-    app.post("/addItems", async (req, res) => {
+    app.post("/addItems",verifyToken, async (req, res) => {
       const body = req.body;
       const result = await postCollection.insertOne(body);
       res.send(result);
@@ -80,15 +107,18 @@ async function run() {
     });
 
     // get user Data by email
-    app.get("/userData", async (req, res) => {
+    app.get("/userData",verifyToken, async (req, res) => {
       const email = req.query.email;
+      if(req.user.email !== email){
+        return res.status(403).send("UnAuthorized: Access Denied!")
+      }
       const query = { email: email };
       const result = await postCollection.find(query).toArray();
       res.send(result);
     });
 
     //  find post Data by id
-    app.get("/item/:id", async (req, res) => {
+    app.get("/item/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await postCollection.findOne(query);
@@ -96,7 +126,7 @@ async function run() {
     });
 
     //update post Data by id
-    app.patch('/updateItems/:id', async(req, res)=>{
+    app.patch('/updateItems/:id', verifyToken, async(req, res)=>{
       const id = req.params.id;
       const body = req.body;
       const query = {_id: new ObjectId(id)}
@@ -117,15 +147,18 @@ async function run() {
     })
 
     //allRecovered post api
-    app.get('/allRecovered', async(req, res)=>{
+    app.get('/allRecovered',verifyToken, async(req, res)=>{
       const email = req.query.email
+      if(req.user.email !== email){
+        return res.status(403).send("UnAuthorized: Access Denied!")
+      }
       const query = {recoveredEmail:email}
       const result = await dataCollection.find(query).toArray()
       res.send(result)
     })
     
     //delete post by id
-    app.delete('/postId/:id', async(req, res)=>{
+    app.delete('/postId/:id', verifyToken, async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await postCollection.deleteOne(query)
@@ -133,7 +166,7 @@ async function run() {
     })
 
     // add find Lost Data and Update status
-    app.post("/addData", async (req, res) => {
+    app.post("/addData", verifyToken, async (req, res) => {
       const body = req.body;
       const result = await dataCollection.insertOne(body);
 
