@@ -70,6 +70,7 @@ async function run() {
       }).send({status:'token Cleared'})
     })
 
+
     // post post data
     app.post("/addItems",verifyToken, async (req, res) => {
       const body = req.body;
@@ -80,6 +81,8 @@ async function run() {
    // search api and get post data api
     app.get("/getItems", async (req, res) => {
       const search = req.query.search 
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size)
   
       let option = {}
       if(search){
@@ -91,10 +94,16 @@ async function run() {
         };
       }
        
-      const result = await postCollection.find(option).toArray();
-      res.send(result);
-      
+      const result = await postCollection.find(option).skip(page*size).limit(size).toArray()
+
+      res.send(result); 
     });
+
+    // pagination count
+    app.get('/pages', async(req, res)=>{
+      const count = await postCollection.estimatedDocumentCount()
+      res.send({count})
+    })
 
     //get recent added post
     app.get("/recentPost", async (req, res) => {
