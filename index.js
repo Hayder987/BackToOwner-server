@@ -9,7 +9,7 @@ const port = process.env.PORT || 4000;
 
 // middleware
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['https://backtoowner-b5097.web.app'],
   credentials:true
 }));
 
