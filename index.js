@@ -13,6 +13,7 @@ app.use(cors({
   credentials:true
 }));
 
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -127,7 +128,7 @@ async function run() {
     });
 
     //  find post Data by id
-    app.get("/item/:id", verifyToken, async (req, res) => {
+    app.get("/item/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await postCollection.findOne(query);
@@ -135,7 +136,7 @@ async function run() {
     });
 
     //update post Data by id
-    app.patch('/updateItems/:id', verifyToken, async(req, res)=>{
+    app.patch('/updateItems/:id', async(req, res)=>{
       const id = req.params.id;
       const body = req.body;
       const query = {_id: new ObjectId(id)}
@@ -167,7 +168,7 @@ async function run() {
     })
     
     //delete post by id
-    app.delete('/postId/:id', verifyToken, async(req, res)=>{
+    app.delete('/postId/:id', async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await postCollection.deleteOne(query)
