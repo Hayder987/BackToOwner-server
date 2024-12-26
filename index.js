@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 4000;
 
-// middleware
+//middleware
 app.use(cors({
   origin: ['https://backtoowner-b5097.web.app'],
   credentials:true
@@ -52,7 +52,7 @@ async function run() {
    //create jwt token
     app.post('/jwt', (req, res)=>{
        const user = req.body
-       const token =jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {expiresIn:'1d'})
+       const token =jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {expiresIn:'5d'})
        
        res.cookie('token', token, {
     
