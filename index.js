@@ -9,7 +9,7 @@ const port = process.env.PORT || 4000;
 
 //middleware
 app.use(cors({
-  origin: ['https://backtoowner-b5097.web.app'],
+  origin: ['https://backtoowner-b5097.web.app', "http://localhost:5173"],
   credentials:true
 }));
 
@@ -49,6 +49,7 @@ async function run() {
   try {
     const postCollection = client.db("lostDB").collection("postCollection");
     const dataCollection = client.db("lostDB").collection("dataCollection");
+    const userCollection = client.db("lostDB").collection("userCollection");
 
    //create jwt token
     app.post('/jwt', (req, res)=>{
@@ -79,6 +80,53 @@ async function run() {
       res.send(result);
     });
 
+    // add user
+    app.post('/user', async(req, res)=>{
+      const body = req.body
+      const query = {email: body.email}
+      const isExist = await userCollection.findOne(query)
+      if(isExist){
+        return res.send(isExist)
+      }
+
+      const result = await userCollection.insertOne(body)
+      res.send(result)
+    })
+
+    app.get('/user', verifyToken, async(req, res)=>{
+      const result = await userCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.get('/user/:email', async(req, res)=>{
+      const email = req.params.email
+      const query = {email:email}
+      const result = await userCollection.findOne(query)
+      res.send(result)
+    })
+    
+    // todo: using verify admin
+    app.delete('/user/:id', verifyToken, async(req, res)=>{
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await userCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    // update user Role
+    app.patch('/userRole/:email', verifyToken, async(req, res)=>{
+      const email = req.params.email
+      const role = req.query.role;
+      const query = {email: email}
+      const updateDoc={
+        $set:{
+          role:role
+        }
+      }
+      const result = await userCollection.updateOne(query, updateDoc)
+      res.send(result)
+    })
+
    // search api and get post data api
     app.get("/getItems", async (req, res) => {
       const search = req.query.search 
@@ -99,6 +147,11 @@ async function run() {
 
       res.send(result); 
     });
+
+    app.get('/getAllItems', verifyToken, async(req, res)=>{
+      const result = await postCollection.find().toArray()
+      res.send(result)
+    })
 
     // pagination count
     app.get('/pages', async(req, res)=>{
@@ -156,7 +209,7 @@ async function run() {
       res.send(result)
     })
 
-    //allRecovered post api
+    //get allRecovered post api
     app.get('/allRecovered',verifyToken, async(req, res)=>{
       const email = req.query.email
       if(req.user.email !== email){
@@ -166,9 +219,28 @@ async function run() {
       const result = await dataCollection.find(query).toArray()
       res.send(result)
     })
+
+    app.get('/allRecoveredAdmin',verifyToken, async(req, res)=>{
+      const result = await dataCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.delete('/recoveredItem/:id', async(req, res)=>{
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await dataCollection.deleteOne(query)
+      res.send(result)
+    })
     
     //delete post by id
     app.delete('/postId/:id', async(req, res)=>{
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await postCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    app.delete('/allPostId/:id', verifyToken, async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await postCollection.deleteOne(query)
