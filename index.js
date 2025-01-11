@@ -35,6 +35,8 @@ const verifyToken=(req, res, next)=>{
 
 }
 
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.7ya1e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -50,6 +52,18 @@ async function run() {
     const postCollection = client.db("lostDB").collection("postCollection");
     const dataCollection = client.db("lostDB").collection("dataCollection");
     const userCollection = client.db("lostDB").collection("userCollection");
+
+    const verifyAdmin = async(req, res, next)=>{
+      const email = req.user.email;
+      const query = {email: email} 
+      const userData = await userCollection.findOne(query)
+      const isAdmin = userData.role ==="admin";
+      console.log(isAdmin)
+      if(!isAdmin){
+       return res.status(403).send('forbidden Access')
+      }
+      next()
+   }
 
    //create jwt token
     app.post('/jwt', (req, res)=>{
@@ -74,7 +88,7 @@ async function run() {
 
 
     // post post data
-    app.post("/addItems",verifyToken, async (req, res) => {
+    app.post("/addItems",verifyToken,  async (req, res) => {
       const body = req.body;
       const result = await postCollection.insertOne(body);
       res.send(result);
@@ -93,20 +107,20 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/user', verifyToken, async(req, res)=>{
+    app.get('/user', verifyToken, verifyAdmin, async(req, res)=>{
       const result = await userCollection.find().toArray()
       res.send(result)
     })
 
-    app.get('/user/:email', async(req, res)=>{
+    app.get('/user/:email', verifyToken, async(req, res)=>{
       const email = req.params.email
       const query = {email:email}
       const result = await userCollection.findOne(query)
       res.send(result)
     })
     
-    // todo: using verify admin
-    app.delete('/user/:id', verifyToken, async(req, res)=>{
+   
+    app.delete('/user/:id', verifyToken, verifyAdmin, async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await userCollection.deleteOne(query)
@@ -148,7 +162,7 @@ async function run() {
       res.send(result); 
     });
 
-    app.get('/getAllItems', verifyToken, async(req, res)=>{
+    app.get('/getAllItems', verifyToken, verifyAdmin, async(req, res)=>{
       const result = await postCollection.find().toArray()
       res.send(result)
     })
@@ -220,12 +234,12 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/allRecoveredAdmin',verifyToken, async(req, res)=>{
+    app.get('/allRecoveredAdmin',verifyToken,verifyAdmin, async(req, res)=>{
       const result = await dataCollection.find().toArray()
       res.send(result)
     })
 
-    app.delete('/recoveredItem/:id', async(req, res)=>{
+    app.delete('/recoveredItem/:id',verifyAdmin, async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await dataCollection.deleteOne(query)
@@ -240,7 +254,7 @@ async function run() {
       res.send(result)
     })
 
-    app.delete('/allPostId/:id', verifyToken, async(req, res)=>{
+    app.delete('/allPostId/:id', verifyToken, verifyAdmin, async(req, res)=>{
       const id = req.params.id
       const query = {_id: new ObjectId(id)}
       const result = await postCollection.deleteOne(query)
